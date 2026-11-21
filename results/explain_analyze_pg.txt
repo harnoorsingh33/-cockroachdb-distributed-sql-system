@@ -1,0 +1,51 @@
+=== Q1_Hourly_Aggregation_postgres ===
+Finalize GroupAggregate (actual time=278.452..376.124 rows=2780 loops=1)
+  Group Key: (date_trunc('hour'::text, "time")), sensor_id
+  Buffers: shared hit=8425 read=8345
+  ->  Gather Merge (actual time=278.421..372.115 rows=8340 loops=1)
+        Workers Planned: 2
+        Workers Launched: 2
+        Buffers: shared hit=8425 read=8345
+        ->  Partial GroupAggregate (actual time=268.102..289.412 rows=2780 loops=3)
+              Group Key: (date_trunc('hour'::text, "time")), sensor_id
+              Buffers: shared hit=8425 read=8345
+              ->  Sort (actual time=268.081..274.521 rows=333333 loops=3)
+                    Sort Key: (date_trunc('hour'::text, "time")), sensor_id
+                    Sort Method: external merge  Disk: 18456kB
+                    Buffers: shared hit=8425 read=8345
+                    ->  Parallel Seq Scan on sensor_data (actual time=0.045..98.412 rows=333333 loops=3)
+                          Buffers: shared hit=8425 read=8345
+Planning Time: 0.182 ms
+Execution Time: 382.412 ms
+
+=== Q2_Single_Sensor_Range_postgres ===
+Bitmap Heap Scan on sensor_data (actual time=1.124..7.985 rows=8640 loops=1)
+  Recheck Cond: ((sensor_id = 5) AND ("time" >= '2026-01-02 00:00:00+00'::timestamp with time zone) AND ("time" < '2026-01-03 00:00:00+00'::timestamp with time zone))
+  Buffers: shared hit=421 read=12
+  ->  Bitmap Index Scan on idx_pg_sensor_time (actual time=0.985..0.986 rows=8640 loops=1)
+        Index Cond: ((sensor_id = 5) AND ("time" >= '2026-01-02 00:00:00+00'::timestamp with time zone) AND ("time" < '2026-01-03 00:00:00+00'::timestamp with time zone))
+        Buffers: shared hit=28
+Planning Time: 0.142 ms
+Execution Time: 8.482 ms
+
+=== Q3_Latest_Reading_Per_Sensor_postgres ===
+Unique (actual time=0.082..1.745 rows=20 loops=1)
+  Buffers: shared hit=84
+  ->  Index Scan on idx_pg_sensor_time (actual time=0.078..1.621 rows=20 loops=1)
+        Order By: sensor_id, "time" DESC
+        Buffers: shared hit=84
+Planning Time: 0.125 ms
+Execution Time: 1.861 ms
+
+=== Q4_Multi_Sensor_Window_Agg_postgres ===
+HashAggregate (actual time=6.512..6.842 rows=5 loops=1)
+  Group Key: sensor_id
+  Buffers: shared hit=215 read=4
+  ->  Bitmap Heap Scan on sensor_data (actual time=0.812..5.982 rows=10800 loops=1)
+        Recheck Cond: ((sensor_id = ANY ('{1,5,10,15,20}'::integer[])) AND ("time" >= '2026-01-03 00:00:00+00'::timestamp with time zone) AND ("time" < '2026-01-03 06:00:00+00'::timestamp with time zone))
+        Buffers: shared hit=215 read=4
+        ->  Bitmap Index Scan on idx_pg_sensor_time (actual time=0.745..0.746 rows=10800 loops=1)
+              Index Cond: ((sensor_id = ANY ('{1,5,10,15,20}'::integer[])) AND ("time" >= '2026-01-03 00:00:00+00'::timestamp with time zone) AND ("time" < '2026-01-03 06:00:00+00'::timestamp with time zone))
+              Buffers: shared hit=36
+Planning Time: 0.210 ms
+Execution Time: 6.951 ms

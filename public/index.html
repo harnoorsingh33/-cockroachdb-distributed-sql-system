@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CockroachDB Distributed SQL System | 3-Node Replicated Cluster</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Top Navigation Header -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
+            <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+            <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+          </svg>
+        </div>
+        <div>
+          <h1>CockroachDB Distributed SQL System</h1>
+          <p class="subtitle">Three-Node Replicated Cluster &bull; Multi-Raft Consensus &bull; Fault-Tolerant CRUD</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <div class="cluster-pill" id="clusterPill">
+          <span class="status-dot pulsing" id="clusterStatusDot"></span>
+          <span id="clusterStatusText">Connecting...</span>
+        </div>
+        <button class="btn btn-secondary btn-sm" id="btnRefreshCluster">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <polyline points="1 20 1 14 7 14"></polyline>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+          Refresh Cluster
+        </button>
+      </div>
+    </header>
+
+    <!-- Cluster Overview Cards -->
+    <section class="section">
+      <div class="section-title-row">
+        <h2>Cluster Topology &amp; Node Status</h2>
+        <span class="badge badge-info" id="quorumBadge">Quorum: Checking...</span>
+      </div>
+      <div class="nodes-grid" id="nodesContainer">
+        <!-- Node 1 Card -->
+        <div class="node-card" id="card-node-1">
+          <div class="node-card-header">
+            <div class="node-title">
+              <span class="status-indicator" id="dot-node-1"></span>
+              <h3>Node 1 (roach1)</h3>
+            </div>
+            <span class="badge" id="badge-node-1">Checking...</span>
+          </div>
+          <div class="node-metrics">
+            <div class="metric"><span class="label">SQL Endpoint:</span> <span class="val" id="sql-node-1">localhost:26257</span></div>
+            <div class="metric"><span class="label">Admin Console:</span> <a href="http://localhost:8080" target="_blank" class="link" id="http-node-1">http://localhost:8080 ↗</a></div>
+            <div class="metric"><span class="label">Node ID:</span> <span class="val font-mono" id="id-node-1">-</span></div>
+            <div class="metric"><span class="label">Raft Ranges:</span> <span class="val font-mono" id="ranges-node-1">-</span></div>
+            <div class="metric"><span class="label">Leaseholders:</span> <span class="val font-mono" id="leases-node-1">-</span></div>
+          </div>
+          <div class="node-footer">
+            <button class="btn btn-outline btn-xs" onclick="testNodeDirect(1)">Direct Node 1 Query</button>
+          </div>
+        </div>
+
+        <!-- Node 2 Card -->
+        <div class="node-card" id="card-node-2">
+          <div class="node-card-header">
+            <div class="node-title">
+              <span class="status-indicator" id="dot-node-2"></span>
+              <h3>Node 2 (roach2)</h3>
+            </div>
+            <span class="badge" id="badge-node-2">Checking...</span>
+          </div>
+          <div class="node-metrics">
+            <div class="metric"><span class="label">SQL Endpoint:</span> <span class="val" id="sql-node-2">localhost:26258</span></div>
+            <div class="metric"><span class="label">Admin Console:</span> <a href="http://localhost:8081" target="_blank" class="link" id="http-node-2">http://localhost:8081 ↗</a></div>
+            <div class="metric"><span class="label">Node ID:</span> <span class="val font-mono" id="id-node-2">-</span></div>
+            <div class="metric"><span class="label">Raft Ranges:</span> <span class="val font-mono" id="ranges-node-2">-</span></div>
+            <div class="metric"><span class="label">Leaseholders:</span> <span class="val font-mono" id="leases-node-2">-</span></div>
+          </div>
+          <div class="node-footer">
+            <button class="btn btn-outline btn-xs" onclick="testNodeDirect(2)">Direct Node 2 Query</button>
+          </div>
+        </div>
+
+        <!-- Node 3 Card -->
+        <div class="node-card" id="card-node-3">
+          <div class="node-card-header">
+            <div class="node-title">
+              <span class="status-indicator" id="dot-node-3"></span>
+              <h3>Node 3 (roach3)</h3>
+            </div>
+            <span class="badge" id="badge-node-3">Checking...</span>
+          </div>
+          <div class="node-metrics">
+            <div class="metric"><span class="label">SQL Endpoint:</span> <span class="val" id="sql-node-3">localhost:26259</span></div>
+            <div class="metric"><span class="label">Admin Console:</span> <a href="http://localhost:8082" target="_blank" class="link" id="http-node-3">http://localhost:8082 ↗</a></div>
+            <div class="metric"><span class="label">Node ID:</span> <span class="val font-mono" id="id-node-3">-</span></div>
+            <div class="metric"><span class="label">Raft Ranges:</span> <span class="val font-mono" id="ranges-node-3">-</span></div>
+            <div class="metric"><span class="label">Leaseholders:</span> <span class="val font-mono" id="leases-node-3">-</span></div>
+          </div>
+          <div class="node-footer">
+            <button class="btn btn-outline btn-xs" onclick="testNodeDirect(3)">Direct Node 3 Query</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Tabs Navigation -->
+    <div class="tabs-nav">
+      <button class="tab-btn active" data-tab="tab-crud">CRUD Operations &amp; Node Routing</button>
+      <button class="tab-btn" data-tab="tab-replication">Data Replication &amp; Raft Ranges</button>
+      <button class="tab-btn" data-tab="tab-fault">Fault Tolerance &amp; Recovery</button>
+      <button class="tab-btn" data-tab="tab-distsql">Distributed SQL &amp; Transactions</button>
+      <button class="tab-btn" data-tab="tab-concepts">Distributed Architecture &amp; Theory</button>
+    </div>
+
+    <!-- TAB 1: CRUD Operations -->
+    <div class="tab-pane active" id="tab-crud">
+      <div class="panel-card">
+        <div class="toolbar">
+          <div class="toolbar-left">
+            <div class="form-group-inline">
+              <label for="selectNodeGateway">Execute Query Via:</label>
+              <select id="selectNodeGateway" class="form-select">
+                <option value="auto">Auto Gateway (Failover Enabled)</option>
+                <option value="1">Direct Node 1 (Port 26257)</option>
+                <option value="2">Direct Node 2 (Port 26258)</option>
+                <option value="3">Direct Node 3 (Port 26259)</option>
+              </select>
+            </div>
+            <div class="search-box">
+              <input type="text" id="searchInput" placeholder="Search by name or SKU..." class="form-input">
+            </div>
+          </div>
+          <div class="toolbar-right">
+            <button class="btn btn-accent" id="btnConsistencyTest">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              </svg>
+              Test Multi-Node Consistency
+            </button>
+            <button class="btn btn-primary" id="btnOpenAddModal">+ Add Product</button>
+          </div>
+        </div>
+
+        <!-- Query Execution Banner -->
+        <div class="execution-banner" id="executionBanner">
+          <span class="pulse-icon">●</span>
+          <span id="executionText">Select a node or trigger an action to see distributed query execution telemetry.</span>
+        </div>
+
+        <!-- Products Table -->
+        <div class="table-responsive">
+          <table class="data-table" id="productsTable">
+            <thead>
+              <tr>
+                <th>SKU</th>
+                <th>Product Name</th>
+                <th>Category</th>
+                <th>Price ($)</th>
+                <th>Stock</th>
+                <th>Replication Factor</th>
+                <th>Last Updated</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="productsTableBody">
+              <tr>
+                <td colspan="8" class="text-center text-muted">Loading replicated products...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: Replication & Raft Ranges -->
+    <div class="tab-pane" id="tab-replication">
+      <div class="panel-card">
+        <h3>Live CockroachDB Replication &amp; Range Metadata</h3>
+        <p class="text-muted">
+          CockroachDB partitions tables into continuous 64MB key spaces called <strong>Ranges</strong>.
+          Every range is replicated across nodes using the <strong>Raft consensus algorithm</strong>. Below is real cluster metadata queried from <code>SHOW RANGES FROM TABLE products;</code>.
+        </p>
+
+        <div class="replication-stats-row">
+          <div class="stat-box">
+            <span class="stat-label">Replication Factor</span>
+            <span class="stat-value" id="repFactorVal">3 Replicas</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">Consensus Protocol</span>
+            <span class="stat-value">Multi-Raft (Pebble KV)</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">Quorum Requirement</span>
+            <span class="stat-value">2 of 3 Nodes (Majority)</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">Consistency Level</span>
+            <span class="stat-value">Strict Serializable (ACID)</span>
+          </div>
+        </div>
+
+        <h4 class="mt-4">Active Raft Ranges for Table: <code>products</code></h4>
+        <div class="table-responsive">
+          <table class="data-table font-mono" id="rangesTable">
+            <thead>
+              <tr>
+                <th>Range ID</th>
+                <th>Start Key</th>
+                <th>End Key</th>
+                <th>Replicas (Node IDs)</th>
+                <th>Leaseholder</th>
+              </tr>
+            </thead>
+            <tbody id="rangesTableBody">
+              <tr>
+                <td colspan="5" class="text-center text-muted">Querying CockroachDB range descriptors...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h4 class="mt-4">CockroachDB Zone Configuration (Replication Rule)</h4>
+        <div class="code-terminal" id="zoneConfigBlock">
+          <code>Loading zone configuration (ALTER TABLE products CONFIGURE ZONE USING num_replicas = 3)...</code>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: Fault Tolerance & Recovery -->
+    <div class="tab-pane" id="tab-fault">
+      <div class="panel-card">
+        <h3>Fault Tolerance &amp; High Availability Simulator</h3>
+        <p class="text-muted">
+          CockroachDB tolerates $(N - 1)/2$ node failures. In this 3-node cluster, when 1 node goes down, quorum ($\lfloor 3/2 \rfloor + 1 = 2$) is maintained, allowing uninterrupted reads and writes.
+        </p>
+
+        <div class="fault-steps-grid">
+          <div class="step-card">
+            <div class="step-badge">Phase 1</div>
+            <h4>Cluster Normal</h4>
+            <p>All 3 nodes are active. Writes replicate to all 3 nodes. Raft leader coordinates writes across quorum.</p>
+            <button class="btn btn-sm btn-outline" onclick="verifyClusterState()">Verify 3-Node Quorum</button>
+          </div>
+
+          <div class="step-card">
+            <div class="step-badge">Phase 2</div>
+            <h4>Simulate Node 1 Down</h4>
+            <p>Execute in your host terminal:</p>
+            <div class="code-snippet">docker compose stop roach1</div>
+            <button class="btn btn-sm btn-warning" onclick="testWriteDuringFailure()">Test Write on Surviving Nodes</button>
+          </div>
+
+          <div class="step-card">
+            <div class="step-badge">Phase 3</div>
+            <h4>Restore Node 1</h4>
+            <p>Restart the stopped node:</p>
+            <div class="code-snippet">docker compose start roach1</div>
+            <button class="btn btn-sm btn-success" onclick="verifyRecovery()">Verify Node 1 Recovery</button>
+          </div>
+        </div>
+
+        <h4 class="mt-4">Live Fault Tolerance Test Console</h4>
+        <div class="terminal-window">
+          <div class="terminal-header">
+            <span>Distributed Consensus &amp; Node Failure Event Log</span>
+            <button class="btn btn-xs btn-outline" onclick="clearFaultLog()">Clear</button>
+          </div>
+          <div class="terminal-body font-mono" id="faultLog">
+            [System Ready] Click any test button above to run cluster resilience and quorum checks.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: Distributed SQL & Transactions -->
+    <div class="tab-pane" id="tab-distsql">
+      <div class="panel-card">
+        <h3>Distributed SQL Execution (DistSQL) &amp; ACID Transactions</h3>
+        <p class="text-muted">
+          Demonstrate how CockroachDB breaks complex analytical queries into physical stages executed in parallel across cluster nodes, and maintains ACID transactions with Serializable isolation.
+        </p>
+
+        <div class="grid-2-col">
+          <!-- DistSQL Query Plan -->
+          <div class="sub-panel">
+            <h4>1. Distributed Query Plan (EXPLAIN DISTSQL)</h4>
+            <p class="text-muted text-sm">Query: <code>SELECT category, count(*), avg(price), sum(stock) FROM products GROUP BY category;</code></p>
+            <button class="btn btn-primary btn-sm mb-3" id="btnExplainDistSQL">Execute EXPLAIN (DISTSQL)</button>
+            <div class="code-terminal font-mono" id="distsqlPlanOutput">
+              Click the button above to view the physical distributed query execution graph.
+            </div>
+          </div>
+
+          <!-- Distributed ACID Transaction -->
+          <div class="sub-panel">
+            <h4>2. Atomic Distributed Stock Transfer (ACID)</h4>
+            <p class="text-muted text-sm">Transfers inventory units between two products atomically using <code>BEGIN ... COMMIT</code> under Serializable isolation.</p>
+            <form id="txForm" class="mt-3">
+              <div class="form-group mb-2">
+                <label>Source Product (From):</label>
+                <select id="txFromSku" class="form-select font-mono"></select>
+              </div>
+              <div class="form-group mb-2">
+                <label>Destination Product (To):</label>
+                <select id="txToSku" class="form-select font-mono"></select>
+              </div>
+              <div class="form-group mb-3">
+                <label>Transfer Quantity:</label>
+                <input type="number" id="txQty" value="5" min="1" max="50" class="form-input">
+              </div>
+              <button type="submit" class="btn btn-accent btn-sm">Execute Distributed Transaction</button>
+            </form>
+            <div class="tx-result mt-3 font-mono text-sm" id="txResult"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: Distributed Architecture & Theory -->
+    <div class="tab-pane" id="tab-concepts">
+      <div class="panel-card">
+        <h3>Distributed Database Architecture &amp; Theory</h3>
+        <div class="concepts-grid">
+          <div class="concept-card">
+            <h4>1. Distributed SQL &amp; Horizontal Scaling</h4>
+            <p>Unlike traditional monolithic RDBMS (PostgreSQL, MySQL), CockroachDB scales horizontally by distributing tabular data across multiple physical nodes while providing standard ANSI SQL and full ACID guarantees.</p>
+          </div>
+          <div class="concept-card">
+            <h4>2. Raft Consensus Algorithm</h4>
+            <p>Every range forms a Raft consensus group. For each write, the Raft Leader broadcasts log entries to followers. A write is committed once a majority ($Q = \lfloor n/2 \rfloor + 1$) acknowledges, preventing split-brain.</p>
+          </div>
+          <div class="concept-card">
+            <h4>3. Multi-Raft Architecture</h4>
+            <p>Rather than a single bottleneck Raft log, CockroachDB runs thousands of independent Raft groups simultaneously—one per range. Each node can be leader for some ranges and follower for others.</p>
+          </div>
+          <div class="concept-card">
+            <h4>4. Range Leases &amp; Linearizable Reads</h4>
+            <p>Each range elects a Leaseholder (usually the Raft leader). Reads are served directly by the leaseholder without consensus network hops, guaranteeing serializable consistency at high throughput.</p>
+          </div>
+          <div class="concept-card">
+            <h4>5. CAP Theorem &amp; Consistency</h4>
+            <p>CockroachDB is a CP (Consistency &amp; Partition-tolerance) system in Eric Brewer's CAP theorem. During network partitions, it preserves serializable consistency; surviving partitions with quorum continue serving traffic.</p>
+          </div>
+          <div class="concept-card">
+            <h4>6. Fault Tolerance &amp; Quorum</h4>
+            <p>A cluster with $2f + 1$ nodes tolerates $f$ node failures. For our 3-node cluster ($n=3, f=1$), 1 node failure is fully tolerated without data loss or service disruption.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add/Edit Product Modal -->
+    <div class="modal" id="productModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="modalTitle">Add New Replicated Product</h3>
+          <button class="btn-close" id="btnCloseModal">&times;</button>
+        </div>
+        <form id="productForm">
+          <input type="hidden" id="productId">
+          <div class="form-group mb-2">
+            <label for="productSku">SKU (Stock Keeping Unit):</label>
+            <input type="text" id="productSku" class="form-input font-mono" required placeholder="e.g. SKU-SRV-006">
+          </div>
+          <div class="form-group mb-2">
+            <label for="productName">Product Name:</label>
+            <input type="text" id="productName" class="form-input" required placeholder="e.g. Enterprise NVMe Server">
+          </div>
+          <div class="form-group mb-2">
+            <label for="productCategory">Category:</label>
+            <input type="text" id="productCategory" class="form-input" required placeholder="e.g. Servers / Hardware">
+          </div>
+          <div class="form-group mb-2">
+            <label for="productPrice">Price ($):</label>
+            <input type="number" id="productPrice" step="0.01" min="0" class="form-input" required placeholder="2499.00">
+          </div>
+          <div class="form-group mb-3">
+            <label for="productStock">Stock Quantity:</label>
+            <input type="number" id="productStock" min="0" class="form-input" required placeholder="15">
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" id="btnCancelModal">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="btnSaveProduct">Commit Product (Raft Write)</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

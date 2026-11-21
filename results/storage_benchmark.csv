@@ -1,0 +1,4 @@
+system,state,table_size_bytes,index_size_bytes,total_size_bytes,table_size_pretty,index_size_pretty,total_size_pretty,compression_ratio,space_savings_pct
+postgres,uncompressed,68427776,61571072,129998848,65 MB,59 MB,124 MB,1.0,0.0
+timescaledb,uncompressed,68460544,70426624,138887168,65 MB,67 MB,132 MB,1.0,0.0
+timescaledb,compressed,7127040,1835008,8962048,6.8 MB,1.8 MB,8.5 MB,15.5,93.55
